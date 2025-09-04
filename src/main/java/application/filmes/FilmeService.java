@@ -8,28 +8,42 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import application.genero.Genero;
-import application.genero.GeneroService;
+import application.genero.service.GeneroService;
 
 @Service
 public class FilmeService {
     @Autowired
     private FilmeRepository filmeRepo;
     @Autowired
+    private GeneroService generoService;
 
-    public Iterable<FilmeDTO> getll(){
-        return filmeRepo.findAll().stream().map(FilmeDTO:: new).toList();
+    public Iterable<FilmeDTO> getAll() {
+        return filmeRepo.findAll().stream().map(FilmeDTO::new).toList();
     }
 
-    public FilmeDTO  insert(FilmeInsertDTO novoFilme){
+    public FilmeDTO insert(FilmeInsertDTO novoFilme) {
         Genero genero = new Genero(generoService.getOne(novoFilme.idGenero()));
+        
         Filme filme = new Filme();
         filme.setTitulo(novoFilme.titulo());
         filme.setGenero(genero);
 
         return new FilmeDTO(filmeRepo.save(filme));
     }
-    public FilmeDTO update(long id, FilmeInsertDTO novosDados) {
 
+    public FilmeDTO getOne(long id) {
+        Optional<Filme> resultado = filmeRepo.findById(id);
+
+        if(resultado.isEmpty()) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Filme não encontrado"
+            );
+        }
+
+        return new FilmeDTO(resultado.get());
+    }
+
+    public FilmeDTO update(long id, FilmeInsertDTO novosDados) {
         Optional<Filme> resultado = filmeRepo.findById(id);
 
         if(resultado.isEmpty()) {
@@ -46,10 +60,13 @@ public class FilmeService {
         return new FilmeDTO(filmeRepo.save(resultado.get()));
     }
 
-    public void delete(long id){
-        if (!filmeRepo.existsBy(id)){
-        throw new ResponseStatusExcept(HttpStatus.NOT_FOUND, "Filme não encontrado");
-        
+    public void delete(long id) {
+        if(!filmeRepo.existsById(id)) {
+            throw new ResponseStatusException(
+                HttpStatus.NOT_FOUND, "Filme não encontrado"
+            );
+        }
+
+        filmeRepo.deleteById(id);
     }
 }
-
